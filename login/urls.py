@@ -7,13 +7,6 @@ urlpatterns = [
 ]
 
 
-
-# {
-#     "username": "new_user",
-#     "email": "newuser@example.com",
-#     "password": "securepassword123",
-#     "is_admin": false
-
 # }
 # {
 #     "email": "newuser@example.com",
@@ -21,7 +14,15 @@ urlpatterns = [
 # }
 
 # {
-#     "username": "new_user123",
-#     "email": "newuser123@example.com",
-#     "password": "new_user123",
+#     "username": "test_user",
+#     "email": "test@example.com",
+#     "password": "securepassword123"
 # }
+
+# data = {
+#     "username": "john_doe",
+#     "email": "john@example.com",
+#     "password": "securepassword123",
+#     "profile_picture": "path/to/profile_picture.jpg"
+# }
+# new_user = User.create_user(data)

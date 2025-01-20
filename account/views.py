@@ -23,6 +23,10 @@ from account.serializers import (
     ReportSerializer,
 )
 
+from rest_framework.permissions import AllowAny
+
+
+
 # دالة لتحويل الوقت المحلي المرسل من الجهاز إلى UTC
 def convert_to_utc(local_time_str):
     """
@@ -49,6 +53,7 @@ def convert_object_ids(data):
 
 ### عرض تفاصيل المستخدم ###
 class UserDetailView(APIView):
+    
     def get(self, request, user_id):
         """عرض تفاصيل المستخدم حسب user_id"""
         user = User.get_user_by_id(ObjectId(user_id))
@@ -76,6 +81,23 @@ class UserDetailView(APIView):
             return Response(convert_object_ids(updated_user), status=status.HTTP_200_OK)
 
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class UserProfileView(APIView):
+    permission_classes = [AllowAny]  # استخدام AllowAny إذا كانت لا توجد حاجة للتحقق من الهوية
+
+    def get(self, request):
+        user_id = request.user.id  # أو من الممكن أن تستخدم طريقة للحصول على مستخدم من MongoDB مباشرة
+        user = User.get_user_by_id(user_id)  # الحصول على المستخدم من MongoDB باستخدام دالة موجودة في الكلاس User
+        if user:
+            serializer = UserSerializer(user)
+            return Response(serializer.data)
+        else:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+
 
 ### عرض وتسجيل النشاطات ###
 class ActivityLogView(APIView):

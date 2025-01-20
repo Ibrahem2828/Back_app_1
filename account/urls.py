@@ -1,8 +1,9 @@
 from django.urls import path
 from .views import (
     UserDetailView, ActivityLogView, LeaderboardView,
-    RecommendationsView, NotificationsView, RewardView, ReportView
+    RecommendationsView, NotificationsView, RewardView, ReportView,UserProfileView
 )
+
 
 urlpatterns = [
     path('user/<str:user_id>/', UserDetailView.as_view(), name='user_detail'),
@@ -12,8 +13,10 @@ urlpatterns = [
     path('notifications/<str:user_id>/', NotificationsView.as_view(), name='notifications'),
     path('rewards/<str:user_id>/', RewardView.as_view(), name='rewards'),
     path('reports/<str:user_id>/', ReportView.as_view(), name='reports'),
+     path('api/user/profile/', UserProfileView.as_view(), name='user-profile'),
 
 ]
+
 
 
 # PATCH /user/<user_id>/

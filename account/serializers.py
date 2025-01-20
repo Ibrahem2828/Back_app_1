@@ -8,6 +8,21 @@ class UserSerializer(serializers.Serializer):
     points = serializers.IntegerField(read_only=True)
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    birth_date = serializers.DateTimeField(required=False, allow_null=True)
+    account_creation_date = serializers.DateTimeField(required=False, allow_null=True)
+    gender = serializers.CharField(required=False, allow_null=True)
+
+
+
+
+# class UserSerializer(serializers.Serializer):
+#     id = serializers.CharField(source='_id', read_only=True)
+#     username = serializers.CharField()
+#     email = serializers.EmailField()
+#     profile_picture = serializers.URLField(required=False, allow_null=True)
+#     points = serializers.IntegerField(read_only=True)
+#     created_at = serializers.DateTimeField(read_only=True)
+#     updated_at = serializers.DateTimeField(read_only=True)
 
 
 class ActivityLogSerializer(serializers.Serializer):
@@ -57,4 +72,5 @@ class ReportSerializer(serializers.Serializer):
         child=serializers.CharField()  # المصفوفة تحتوي على اسم التقرير ووصفه
     )
     created_at = serializers.DateTimeField(read_only=True)
+
 

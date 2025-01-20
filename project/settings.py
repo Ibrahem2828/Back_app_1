@@ -44,12 +44,14 @@ INSTALLED_APPS = [
     'habit',
     'team',
     'schedule',
+    'rest_framework.authtoken',
 ]
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:64269",  # لا تضيف مسار هنا
     "http://127.0.0.1:8000",  # أيضًا بدون مسار
 ]
+
 
 
 MIDDLEWARE = [
@@ -113,6 +115,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',  # السماح فقط للمستخدمين المسجلين
     ],
+   
 }
 
 
