@@ -3,15 +3,24 @@ from rest_framework import serializers
 from bson import ObjectId
 
 class TaskSerializer(serializers.Serializer):
-    TaskID = serializers.CharField(max_length=50, required=False)
-    UserID = serializers.CharField(max_length=24,required=True)
-    Title = serializers.CharField(max_length=200, required=True)
-    Description = serializers.CharField(max_length=500, allow_blank=True, required=False)
-    Date = serializers.DateTimeField(required=True)  # تاريخ المهمة
-    StartDate = serializers.DateTimeField(required=True)  # تاريخ البدء
-    EndDate = serializers.DateTimeField(required=True)  # تاريخ الانتهاء
-    repetition = serializers.CharField(max_length=50, required=False, allow_blank=True)
-    Status = serializers.CharField(max_length=50, required=True)  # حالة المهمة
+    TaskID = serializers.CharField(max_length=50, required=False) 
+    UserID = serializers.CharField(max_length=24, required=True) 
+    title = serializers.CharField(max_length=200, required=True)  
+    description = serializers.CharField(max_length=500, allow_blank=True, required=False)
+    start_datetime = serializers.DateTimeField(required=True)  
+    end_datetime = serializers.DateTimeField(required=True)  
+    repetition = serializers.CharField(max_length=50, required=False, allow_blank=True)  
+    priority = serializers.ChoiceField(choices=["High", "Medium", "Low"], required=True)  
+    status = serializers.ChoiceField(choices=["Completed", "In Progress", "Pending"], required=True) 
+
+
+    def validate(self, data):
+        """
+        التحقق من أن تاريخ البداية أصغر من تاريخ النهاية
+        """
+        if data["start_datetime"] >= data["end_datetime"]:
+            raise serializers.ValidationError("The start_datetime must be earlier than the end_datetime.")
+        return data
 
 class TemplateSerializer(serializers.Serializer):
     _id = serializers.CharField(read_only=True)

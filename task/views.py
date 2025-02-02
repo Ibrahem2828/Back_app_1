@@ -7,13 +7,57 @@ from rest_framework.response import Response
 from rest_framework import status
 from bson import ObjectId
 from rest_framework.permissions import AllowAny
-from .serializers import AddTemplateTaskSerializer, TaskSerializer, TemplateSerializer
-from .models import Task, TemplateModel, TemplateTask
+from task.serializers import AddTemplateTaskSerializer, TaskSerializer, TemplateSerializer
+from task.models import Task, TemplateModel, TemplateTask
 from django.views.decorators.csrf import csrf_exempt
 
 def convert_object_id_to_string(task):
     task['_id'] = str(task['_id'])
     return task
+
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from .serializers import TaskSerializer
+from .models import Task
+
+class AddTaskView(APIView):
+    permission_classes = [AllowAny]  
+
+    def post(self, request, user_id):  # إضافة user_id كوسيلة لاستقبال الـ ID من المسار
+        task_data = request.data
+        print(f"Task data before validation: {task_data}") 
+
+        # إضافة الـ user_id إلى البيانات قبل التحقق
+        task_data['user_id'] = user_id
+        try:
+            # التحقق من البيانات باستخدام Serializer
+            serializer = TaskSerializer(data=task_data)
+            if serializer.is_valid():
+                # استدعاء وظيفة لإضافة المهمة (يجب أن تكون موجودة في نموذج Task)
+                new_task = Task.add_task(serializer.validated_data)  # وظيفة add_task تُفترض مسبقًا
+                return Response({
+                    "message": "Task added successfully",
+                    "task": new_task
+                }, status=status.HTTP_201_CREATED)
+            else:
+                print(f"Validation errors: {serializer.errors}")  
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        except RuntimeError as e:
+            return Response({
+                "error": str(e)
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        except Exception as e:
+            return Response({
+                "error": f"An unexpected error occurred: {str(e)}"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 
 class TaskListCreateView(APIView):
     permission_classes = [AllowAny]
@@ -21,30 +65,37 @@ class TaskListCreateView(APIView):
     def post(self, request):
         data = request.data
         try:
-            data['Date'] = datetime.combine(datetime.strptime(data['Date'], '%Y-%m-%d'), datetime.min.time())
-            data['StartDate'] = datetime.fromisoformat(data['StartDate'])
-            data['EndDate'] = datetime.fromisoformat(data['EndDate'])
+            # التحقق من تواريخ البداية والنهاية
+            data['start_datetime'] = datetime.fromisoformat(data['start_datetime'])
+            data['end_datetime'] = datetime.fromisoformat(data['end_datetime'])
+
+            serializer = TaskSerializer(data=data)
+            if serializer.is_valid():
+                task_data = serializer.validated_data
+                task_data['created_at'] = datetime.utcnow()
+                task_data['updated_at'] = datetime.utcnow()
+
+                created_task = Task.collection.insert_one(task_data)
+                task_data['_id'] = str(created_task.inserted_id)
+                return Response(task_data, status=status.HTTP_201_CREATED)
+            else:
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except (ValueError, KeyError) as e:
-            return Response({"error": "Invalid date format. Use 'YYYY-MM-DDTHH:MM:SS'."}, status=status.HTTP_400_BAD_REQUEST)
-        serializer = TaskSerializer(data=data)
-
-        if serializer.is_valid():
-            task_data = serializer.validated_data
-            task_data['created_at'] = datetime.utcnow()
-            task_data['updated_at'] = datetime.utcnow()
-
-            created_task = Task.collection.insert_one(task_data)
-            task_data['_id'] = str(created_task.inserted_id)
-            return Response(task_data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Invalid date format. Use ISO 8601 format."}, status=status.HTTP_400_BAD_REQUEST)
 
     def get(self, request):
-        tasks = list(Task.collection.find())
-        task_list = [convert_object_id_to_string(task) for task in tasks]
-        return Response(task_list, status=status.HTTP_200_OK)
+        try:
+            tasks = list(Task.collection.find())
+            for task in tasks:
+                task["_id"] = str(task["_id"])
+            return Response(tasks, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": f"An error occurred: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
 
 #استرجاع مهمة معينة باستخدام معرف المهمة.
 class TaskDetailView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, task_id):
         try:
             task = Task.get_task_by_id(task_id)
@@ -56,7 +107,13 @@ class TaskDetailView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 # استرجاع جميع المهام الخاصة بمستخدم معين
+
+
+
+
+
 class UserTasksView(APIView):
+    permission_classes = [AllowAny]
     def get(self, request, user_id):
         tasks, status_code = Task.get_tasks_by_user_id(user_id)
         if status_code == 200:

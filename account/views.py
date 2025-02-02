@@ -1,4 +1,5 @@
 from datetime import datetime
+from rest_framework.permissions import IsAuthenticated, AllowAny
 import pytz
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -52,49 +53,92 @@ def convert_object_ids(data):
         return data
 
 ### عرض تفاصيل المستخدم ###
+
+# from .utils import convert_to_utc, convert_object_ids  # تأكد من وجود هذه الدوال في utils.py
+class GetUserDetailsByEmail(APIView):
+    """
+    API لعرض تفاصيل المستخدم عن طريق البريد الإلكتروني.
+    """
+
+    permission_classes = [AllowAny]  # يمكن تغيير الصلاحيات حسب الحاجة
+
+    def get(self, request, email):
+        """
+        استرجاع بيانات المستخدم عن طريق البريد الإلكتروني.
+        """
+        try:
+            # البحث عن المستخدم بالبريد الإلكتروني
+            user = User.get_user_by_email(email)
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            # تحويل ObjectId إلى نصوص وتنسيق البيانات
+            user = convert_object_ids(user)
+
+            # إذا كنت تستخدم Serializer
+            serializer = UserSerializer(user, many=False)
+
+            # إعادة البيانات
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
 class UserDetailView(APIView):
     
+    permission_classes = [AllowAny]
+
     def get(self, request, user_id):
         """عرض تفاصيل المستخدم حسب user_id"""
-        user = User.get_user_by_id(ObjectId(user_id))
-        if not user:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
-        return Response(convert_object_ids(user), status=status.HTTP_200_OK)
+        try:
+            user = User.get_user_by_id(ObjectId(user_id))
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+            return Response(convert_object_ids(user), status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     def patch(self, request, user_id):
         """تحديث تفاصيل المستخدم"""
-        user = User.get_user_by_id(ObjectId(user_id))
-        if not user:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            user = User.get_user_by_id(ObjectId(user_id))
+            if not user:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
-        serializer = UserSerializer(data=request.data, partial=True)
-        if serializer.is_valid():
-            updated_data = serializer.validated_data
+            serializer = UserSerializer(data=request.data, partial=True)
+            if serializer.is_valid():
+                updated_data = serializer.validated_data
 
-            # تحويل الوقت المحلي إلى UTC إذا تم إرساله
-            if 'updated_at' in request.data:
-                local_time_str = request.data['updated_at']
-                updated_data['updated_at'] = convert_to_utc(local_time_str)
+                # تحويل الوقت المحلي إلى UTC إذا تم إرساله
+                if 'updated_at' in request.data:
+                    local_time_str = request.data['updated_at']
+                    updated_data['updated_at'] = convert_to_utc(local_time_str)
 
-            User.update_user(ObjectId(user_id), updated_data)
-            updated_user = User.get_user_by_id(ObjectId(user_id))
-            return Response(convert_object_ids(updated_user), status=status.HTTP_200_OK)
+                User.update_user(ObjectId(user_id), updated_data)
+                updated_user = User.get_user_by_id(ObjectId(user_id))
+                return Response(convert_object_ids(updated_user), status=status.HTTP_200_OK)
 
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class UserProfileView(APIView):
-    permission_classes = [AllowAny]  # استخدام AllowAny إذا كانت لا توجد حاجة للتحقق من الهوية
+    permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        user_id = request.user.id  # أو من الممكن أن تستخدم طريقة للحصول على مستخدم من MongoDB مباشرة
-        user = User.get_user_by_id(user_id)  # الحصول على المستخدم من MongoDB باستخدام دالة موجودة في الكلاس User
-        if user:
-            serializer = UserSerializer(user)
-            return Response(serializer.data)
-        else:
-            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        try:
+            user_id = request.user.id  # الحصول على معرف المستخدم من المصادقة
+            user = User.get_user_by_id(ObjectId(user_id))  # التأكد من وجود المستخدم في قاعدة البيانات
+
+            if user:
+                serializer = UserSerializer(user)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            else:
+                return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        except Exception as e:
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 
@@ -123,6 +167,7 @@ class ActivityLogView(APIView):
 
 ### لوحة النقاط ###
 class LeaderboardView(APIView):
+    permission_classes = [AllowAny] 
     def get(self, request):
         """عرض لوحة النقاط"""
         leaderboard = Leaderboard.get_leaderboard()

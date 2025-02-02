@@ -48,16 +48,24 @@
 #     def update_user(user_id, updated_data):
 #      updated_data['updated_at'] = datetime.utcnow()
 #      User.collection.update_one({"_id": user_id}, {"$set": updated_data})
+
 import bcrypt
 from pymongo import MongoClient
 from datetime import datetime
 from bson import ObjectId
+from pymongo.errors import DuplicateKeyError
 
 # إعداد قاعدة البيانات
-client = MongoClient("mongodb://127.0.0.1:27017/")
+client = MongoClient("mongodb://127.0.0.1:27017/")  # تأكد من صحة رابط الاتصال
 db = client['Shift-Start-db']
 
+# رابط الصورة الافتراضية
+DEFAULT_PROFILE_PICTURE = "../img/DEFAULT_PROFILE_PICTURE.png"
+
 # جدول المستخدمين
+
+
+# تعديل في User.create_user
 class User:
     collection = db['users']
 
@@ -73,13 +81,23 @@ class User:
         data['created_at'] = datetime.utcnow()
         data['updated_at'] = datetime.utcnow()
         
-        # تعيين صورة البروفايل كنظام افتراضي (None) والنقاط (0)
-        data['profile_picture'] = None
+        # تعيين صورة البروفايل الافتراضية إذا لم يتم توفير صورة
+        data['profile_picture'] = data.get('profile_picture', DEFAULT_PROFILE_PICTURE)
+        
+        # تعيين النقاط الافتراضية
         data['points'] = 0
         
         # تشفير كلمة المرور
         data['password'] = bcrypt.hashpw(data['password'].encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
         
+        # إدخال المستخدم في قاعدة البيانات
+        try:
+            result = User.collection.insert_one(data)
+            data['_id'] = result.inserted_id
+            return data
+        except DuplicateKeyError:
+            raise ValueError("A user with this email or username already exists.")
+ 
         # إدخال المستخدم في قاعدة البيانات
         User.collection.insert_one(data)
         return data
@@ -121,7 +139,6 @@ class User:
     def update_profile(user_id, profile_data):
         # تحديث البيانات الخاصة بالبروفايل مثل الصورة أو النقاط
         User.update_user(user_id, profile_data)
-
 
 
 

@@ -3,6 +3,7 @@ from .views import (
     UserDetailView, ActivityLogView, LeaderboardView,
     RecommendationsView, NotificationsView, RewardView, ReportView,UserProfileView
 )
+from .views import GetUserDetailsByEmail
 
 
 urlpatterns = [
@@ -13,7 +14,9 @@ urlpatterns = [
     path('notifications/<str:user_id>/', NotificationsView.as_view(), name='notifications'),
     path('rewards/<str:user_id>/', RewardView.as_view(), name='rewards'),
     path('reports/<str:user_id>/', ReportView.as_view(), name='reports'),
-     path('api/user/profile/', UserProfileView.as_view(), name='user-profile'),
+    path('api/user/profile/', UserProfileView.as_view(), name='user-profile'),
+    path('api/user/<str:email>/', GetUserDetailsByEmail.as_view(), name='get_user_details_by_email'),
+
 
 ]
 

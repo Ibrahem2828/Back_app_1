@@ -1,5 +1,6 @@
 from django.urls import path
 from task.views import (
+    AddTaskView,
     TaskDetailView,
     TaskListCreateView,
     UserTasksView,
@@ -14,20 +15,23 @@ from task.views import (
     UpdateTemplateTaskView,
     AssignTemplateTasksView
 )
+# المسارات
 
+from .views import AddTaskView
 urlpatterns = [
+    path('add-task/<str:user_id>/', AddTaskView.as_view(), name='add-task'),
     # إنشاء وعرض المهام
-    path('tasks/', TaskListCreateView.as_view(), name='task-list-create'),
+    path('', TaskListCreateView.as_view(), name='task-list-create'),
     # استرجاع مهمة معينة عن طريق TaskID
-    path('tasks/<str:task_id>/', TaskDetailView.as_view(), name='task-detail'),
+    path('<str:task_id>/', TaskDetailView.as_view(), name='task-detail'),
     # استرجاع جميع المهام الخاصة بمستخدم معين
-    path('tasks/user/<str:user_id>/', UserTasksView.as_view(), name='user-tasks'),
+    path('user/<str:user_id>/', UserTasksView.as_view(), name='user-tasks'),
     # حذف المهمة عن طريق id المهمة
-    path('tasks/delete/<str:task_id>/', TaskDeleteView.as_view(), name='delete_task'),
+    path('delete/<str:task_id>/', TaskDeleteView.as_view(), name='delete_task'),
     # تعديل على مهمة عم طريق id التاسك
-    path('tasks/update/<str:task_id>/', UpdateTaskView.as_view(), name='update_task'),
+    path('update/<str:task_id>/', UpdateTaskView.as_view(), name='update_task'),
     # استرجاع كافة المهام في قاعدة البيانات
-    path('tasks/', GetAllTasksView.as_view(), name='get_all_tasks'),
+    path('/', GetAllTasksView.as_view(), name='get_all_tasks'),
     # إضافة قالب وعرض القوالب الموجودة
     path('templates/', TemplateView.as_view(), name='template_list_create'),
     #حذف القالب عن طريق الاسم
@@ -45,16 +49,19 @@ urlpatterns = [
 
 ]
 
+
+
+
 #  إضافة مهمة جديدة           http://127.0.0.1:8000/api/tasks/tasks/
 # {
-#   "UserID": "user123",
-#   "Title": "Complete Homework",
-#   "Description": "Finish math homework before evening",
-#   "Date": "2025-01-15",
-#   "StartDate": "2025-01-15T09:00:00",
-#   "EndDate": "2025-01-15T12:00:00",
-#   "repetition": "None",
-#   "Status": "Pending"
+#   "UserID": "1234567890abcdef12345678",
+#   "title": "Complete Homework",
+#   "description": "Complete the math homework by the end of the week.",
+#   "start_datetime": "2025-02-01T09:00:00Z",
+#   "end_datetime": "2025-02-01T11:00:00Z",
+#   "repetition": "Daily",
+#   "priority": "High",
+#   "status": "Pending"
 # }
 
 # http://127.0.0.1:8000/api/tasks/tasks/67869f5351973cc0e6d796a7/ استرجاع مهمة ما عن طريق id المهمة
